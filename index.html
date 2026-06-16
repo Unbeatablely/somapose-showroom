@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>身境 SOMAPOSE — 产品交互展厅</title>
+<style>
+  :root {
+    --dusty-pink: #C4A0A0;
+    --sea-salt: #B0B5B9;
+    --moss-green: #9CAF88;
+    --warm-cream: #F5EDE5;
+    --warm-white: #FAF6F2;
+    --text-dark: #5D4E47;
+    --text-medium: #8B7D75;
+    --text-light: #B5A9A0;
+    --border-subtle: #E5DCD3;
+    --card-bg: #FFFBF8;
+    --shadow-soft: 0 4px 24px rgba(120, 100, 80, 0.08);
+    --shadow-card: 0 2px 16px rgba(120, 100, 80, 0.06);
+    --radius: 18px;
+    --transition: 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Serif SC', Georgia, serif;
+    background: var(--warm-white);
+    color: var(--text-dark);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ═══════════ LEFT PANEL — Product Selector ═══════════ */
+  #left-panel {
+    width: 420px;
+    min-width: 420px;
+    background: var(--card-bg);
+    border-right: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    box-shadow: var(--shadow-soft);
+  }
+
+  #panel-header {
+    padding: 32px 36px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  #panel-header .logo {
+    font-size: 13px;
+    letter-spacing: 6px;
+    color: var(--text-light);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  #panel-header h1 {
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    color: var(--text-dark);
+  }
+
+  #panel-header .subtitle {
+    font-size: 13px;
+    color: var(--text-medium);
+    margin-top: 6px;
+    letter-spacing: 2px;
+  }
+
+  #product-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .product-card {
+    padding: 22px 24px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--transition);
+    border: 1.5px solid transparent;
+    position: relative;
+    background: var(--warm-white);
+  }
+
+  .product-card:hover {
+    background: #FFF5EF;
+    border-color: var(--border-subtle);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-card);
+  }
+
+  .product-card.active {
+    background: linear-gradient(135deg, #FFF5EF 0%, #FDF0EA 100%);
+    border-color: var(--dusty-pink);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .product-card .card-number {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--text-light);
+    margin-bottom: 6px;
+  }
+
+  .product-card .card-title {
+    font-size: 19px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+  }
+
+  .product-card .card-tagline {
+    font-size: 13px;
+    color: var(--text-medium);
+    line-height: 1.5;
+  }
+
+  .product-card .card-icon {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 28px;
+    opacity: 0.3;
+    transition: opacity var(--transition);
+  }
+
+  .product-card.active .card-icon { opacity: 0.7; }
+
+  /* Indicator dot */
+  .product-card .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .dot-pink { background: var(--dusty-pink); }
+  .dot-gray { background: var(--sea-salt); }
+  .dot-green { background: var(--moss-green); }
+
+  #panel-footer {
+    padding: 20px 36px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 12px;
+    color: var(--text-light);
+    letter-spacing: 2px;
+    text-align: center;
+  }
+
+  /* ═══════════ RIGHT PANEL — 3D Viewport ═══════════ */
+  #right-panel {
+    flex: 1;
+    position: relative;
+    background: radial-gradient(ellipse at center, #FDF9F5 0%, #F5EDE5 100%);
+  }
+
+  #canvas-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  #canvas-container canvas { display: block; }
+
+  /* Overlay info card */
+  #info-overlay {
+    position: absolute;
+    bottom: 36px;
+    left: 48px;
+    right: 48px;
+    background: rgba(255, 251, 248, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: var(--radius);
+    padding: 24px 32px;
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-soft);
+    transition: all var(--transition);
+    max-width: 560px;
+  }
+
+  #info-overlay h3 {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+    color: var(--text-dark);
+  }
+
+  #info-overlay .desc {
+    font-size: 13.5px;
+    line-height: 1.8;
+    color: var(--text-medium);
+  }
+
+  #info-overlay .features {
+    display: flex;
+    gap: 16px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  #info-overlay .feature-tag {
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--warm-cream);
+    color: var(--text-medium);
+    white-space: nowrap;
+  }
+
+  /* View hint */
+  #view-hint {
+    position: absolute;
+    top: 36px;
+    right: 36px;
+    font-size: 11px;
+    color: var(--text-light);
+    letter-spacing: 2px;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  /* Loading */
+  #loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    background: var(--warm-white);
+    transition: opacity 0.6s;
+    pointer-events: none;
+  }
+  #loading.hidden { opacity: 0; }
+
+  #loading .pulse {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--dusty-pink);
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(0.6); opacity: 0.4; }
+    50% { transform: scale(1.3); opacity: 1; }
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    body { flex-direction: column; }
+    #left-panel { width: 100%; min-width: 100%; max-height: 280px; flex-shrink: 0; }
+    #product-nav { flex-direction: row; overflow-x: auto; gap: 8px; padding: 12px; }
+    .product-card { min-width: 180px; flex-shrink: 0; }
+    .product-card:hover { transform: translateY(-2px); }
+    #info-overlay { left: 16px; right: 16px; bottom: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ LEFT PANEL ═══════════ -->
+<div id="left-panel">
+  <div id="panel-header">
+    <div class="logo">SOMAPOSE</div>
+    <h1>身境 · 产品展厅</h1>
+    <div class="subtitle">点击下方产品，查看3D模型与详情</div>
+  </div>
+
+  <div id="product-nav">
+    <div class="product-card active" data-product="rings">
+      <div class="card-number">GIFT ONE</div>
+      <div class="card-title"><span class="dot dot-pink"></span>共鸣环 · 伴侣双触套装</div>
+      <div class="card-tagline">NFC触碰同步 · 无性别珠宝风 · 情感陪伴硬件</div>
+      <div class="card-icon">💫</div>
+    </div>
+
+    <div class="product-card" data-product="cards">
+      <div class="card-number">GIFT TWO</div>
+      <div class="card-title"><span class="dot dot-gray"></span>身体地图 · 艺术卡牌盒</div>
+      <div class="card-tagline">精装书形包装 · 去色艺术插画 · 科学身体认知</div>
+      <div class="card-icon">📖</div>
+    </div>
+
+    <div class="product-card" data-product="app">
+      <div class="card-number">GIFT THREE</div>
+      <div class="card-title"><span class="dot dot-green"></span>SOMAPOSE · 真爱复盘APP</div>
+      <div class="card-tagline">身体备忘录 · 愉悦日记 · 亲密关系数据洞察</div>
+      <div class="card-icon">📱</div>
+    </div>
+  </div>
+
+  <div id="panel-footer">莫兰迪配色 · 去色情化设计 · 阳光性教育</div>
+</div>
+
+<!-- ═══════════ RIGHT PANEL ═══════════ -->
+<div id="right-panel">
+  <div id="canvas-container"></div>
+  <div id="view-hint">🖱 拖拽旋转 · 滚轮缩放 · 右键平移</div>
+
+  <div id="info-overlay">
+    <h3 id="info-title">共鸣环 · 伴侣双触套装</h3>
+    <p class="desc" id="info-desc">
+      外观采用无性别珠宝风格，莫兰迪低饱和配色（雾粉 / 海盐灰 / 苔藓绿），
+      定位情侣智能配饰而非玩具。NFC 一碰同步，无常驻蓝牙，保护隐私无佩戴压力。
+      搭载 PPG+EDA+九轴传感器，多维精准监测身体状态。
+    </p>
+    <div class="features" id="info-features">
+      <span class="feature-tag">NFC 异步同步</span>
+      <span class="feature-tag">多点压感+宽频微振</span>
+      <span class="feature-tag">柔性环保材料</span>
+      <span class="feature-tag">镜像模式</span>
+      <span class="feature-tag">默契游戏</span>
+    </div>
+  </div>
+
+  <div id="loading"><div class="pulse"></div></div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ─── Global State ─────────────────────────
+let camera, scene, renderer, controls;
+let currentProduct = 'rings';
+let productGroups = {};
+let animationMixers = [];
+const clock = new THREE.Clock();
+
+// ─── Product Data ─────────────────────────
+const productInfo = {
+  rings: {
+    title: '共鸣环 · 伴侣双触套装',
+    desc: '外观采用无性别珠宝风格，莫兰迪低饱和配色（雾粉 / 海盐灰 / 苔藓绿），定位情侣智能配饰而非玩具。NFC 一碰同步，无常驻蓝牙，保护隐私无佩戴压力。搭载 PPG+EDA+九轴传感器，多维精准监测身体状态。镜像模式下A环轻抚→B环同步同频振动，异地蓝牙亦可用。',
+    features: ['NFC 异步同步', '多点压感+宽频微振', '柔性环保材料', '镜像模式', '默契游戏', '磁吸充电'],
+    cameraPos: [3.5, 2.2, 5.5],
+    cameraTarget: [0, 0.3, 0],
+    color: '#C4A0A0'
+  },
+  cards: {
+    title: '身体地图 · 艺术卡牌盒',
+    desc: '精装书本尺寸布面硬盒，烫银线条插画，完全去成人暗示，可公开陈列于书架或床头柜。卡牌正面为去色艺术插画（花瓣/海浪隐喻身体区域），背面扫码进入APP→3D解剖模型+呼吸引导+力度/温度科普+愉悦日记。补位学校性教育空白，降低因无知导致的损伤与风险行为。',
+    features: ['精装书形包装', '去色艺术插画', '3D解剖模型联动', '呼吸放松引导', '愉悦日记打卡', '收藏级印刷'],
+    cameraPos: [2.5, 1.8, 4],
+    cameraTarget: [0, 0.15, -0.3],
+    color: '#B0B5B9'
+  },
+  app: {
+    title: 'SOMAPOSE · 真爱复盘APP',
+    desc: '通过共鸣环感知的震感频率，与APP通信记录压力/时长，生成"放松-愉悦曲线"存档。独创NFC异步一碰同步模式——硬件本地独立存储运算，闲置全程物理断联，无监听无定位。主动触碰手机NFC建立临时短连接传输数据，同步完成立即断开，不留常驻后台。',
+    features: ['NFC一碰同步', '身体备忘录', '放松-愉悦曲线', '零隐私泄露', '情侣复盘模式', '知识科普库'],
+    cameraPos: [2, 3, 5],
+    cameraTarget: [0, 0.5, 0],
+    color: '#9CAF88'
+  }
+};
+
+// ─── Scene Init ───────────────────────────
+function initScene() {
+  const container = document.getElementById('canvas-container');
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf5ede5);
+  scene.fog = new THREE.Fog(0xf5ede5, 4, 22);
+
+  camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
+  camera.position.set(...productInfo.rings.cameraPos);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  container.appendChild(renderer.domElement);
+
+  // ─── Lighting ─────────────────
+  const ambient = new THREE.AmbientLight(0xffe8d6, 1.8);
+  scene.add(ambient);
+
+  const key = new THREE.DirectionalLight(0xffeedd, 4.5);
+  key.position.set(5, 8, 5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.near = 0.5; key.shadow.camera.far = 50;
+  key.shadow.camera.left = -8; key.shadow.camera.right = 8;
+  key.shadow.camera.top = 8; key.shadow.camera.bottom = -8;
+  key.shadow.bias = -0.0001; key.shadow.normalBias = 0.02;
+  scene.add(key);
+
+  const fill = new THREE.DirectionalLight(0xffccaa, 2.0);
+  fill.position.set(-3, 2, -2);
+  scene.add(fill);
+
+  const rim = new THREE.DirectionalLight(0xfff0e8, 2.5);
+  rim.position.set(0, 1, -4);
+  scene.add(rim);
+
+  const top = new THREE.PointLight(0xffe4d0, 8, 14, 1.5);
+  top.position.set(0, 4, 2);
+  scene.add(top);
+
+  // ─── Ground ────────────────────
+  const groundGeom = new THREE.CircleGeometry(8, 64);
+  const ground = new THREE.Mesh(groundGeom, new THREE.MeshStandardMaterial({
+    color: 0xf0e5da, roughness: 0.85, metalness: 0
+  }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -2.2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // ─── Controls ─────────────────
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 2.5;
+  controls.maxDistance = 9;
+  controls.maxPolarAngle = Math.PI * 0.65;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.25;
+  controls.target.set(0, 0.3, 0);
+
+  // Expose
+  window.camera = camera;
+  window.scene = scene;
+  window.renderer = renderer;
+
+  // Build all product models
+  productGroups.rings = createRingsScene();
+  productGroups.cards = createCardsScene();
+  productGroups.app = createAppScene();
+
+  // Show default
+  showProduct('rings');
+
+  // Hide loading
+  setTimeout(() => document.getElementById('loading').classList.add('hidden'), 800);
+}
+
+// ══════════════════════════════════════════════
+// RESONANCE RINGS — 共鸣环
+// ══════════════════════════════════════════════
+function createResonanceRing(color, position, rotationY = 0) {
+  const group = new THREE.Group();
+
+  // Outer ring
+  const outerGeom = new THREE.TorusGeometry(0.22, 0.06, 32, 80);
+  const outer = new THREE.Mesh(outerGeom, new THREE.MeshStandardMaterial({
+    color, roughness: 0.32, metalness: 0.15
+  }));
+  outer.castShadow = true; outer.receiveShadow = true;
+  group.add(outer);
+
+  // Inner band
+  const innerGeom = new THREE.TorusGeometry(0.22, 0.048, 32, 80);
+  const inner = new THREE.Mesh(innerGeom, new THREE.MeshStandardMaterial({
+    color: new THREE.Color(color).multiplyScalar(0.85), roughness: 0.22, metalness: 0.2
+  }));
+  inner.castShadow = true;
+  group.add(inner);
+
+  // Sensor nodes
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const node = new THREE.Mesh(
+      new THREE.SphereGeometry(0.016, 16, 16),
+      new THREE.MeshStandardMaterial({ color: 0xe8ddd5, roughness: 0.18, metalness: 0.45 })
+    );
+    node.position.set(Math.cos(angle) * 0.22, 0, Math.sin(angle) * 0.22);
+    node.castShadow = true;
+    group.add(node);
+  }
+
+  // Charging contact
+  const contact = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.013, 0.013, 0.025, 16),
+    new THREE.MeshStandardMaterial({ color: 0xcccbb8, roughness: 0.12, metalness: 0.8 })
+  );
+  contact.rotation.z = Math.PI / 2;
+  contact.position.x = 0.22;
+  contact.castShadow = true;
+  group.add(contact);
+
+  group.position.copy(position);
+  group.rotation.y = rotationY;
+  return group;
+}
+
+function createRingsScene() {
+  const root = new THREE.Group();
+
+  // Two rings
+  const ring1 = createResonanceRing(0xC4A0A0, new THREE.Vector3(-0.5, 0.25, 0.25), 0.3);
+  const ring2 = createResonanceRing(0xB0B5B9, new THREE.Vector3(0.5, 0.25, 0.25), -0.3);
+  root.add(ring1, ring2);
+
+  // Stands
+  [-0.5, 0.5].forEach((x, i) => {
+    const stand = new THREE.Group();
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.22, 0.07, 48),
+      new THREE.MeshStandardMaterial({ color: 0xe0d5c8, roughness: 0.5, metalness: 0.05 })
+    );
+    base.position.y = -0.72; base.castShadow = true; base.receiveShadow = true;
+    stand.add(base);
+
+    const stem = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.04, 0.38, 32),
+      new THREE.MeshStandardMaterial({ color: 0xd8ccc0, roughness: 0.4, metalness: 0.1 })
+    );
+    stem.position.y = -0.52; stem.castShadow = true;
+    stand.add(stem);
+
+    stand.position.x = x;
+    root.add(stand);
+  });
+
+  // Decorative petals
+  const petalColors = [0xe8d0c0, 0xe5cbb8, 0xecd5c5];
+  for (let i = 0; i < 6; i++) {
+    const petalGeom = new THREE.SphereGeometry(0.04, 8, 4);
+    petalGeom.scale(1, 0.12, 2);
+    const petal = new THREE.Mesh(petalGeom, new THREE.MeshStandardMaterial({
+      color: petalColors[i % 3], roughness: 0.6, metalness: 0
+    }));
+    petal.position.set(
+      (Math.random() - 0.5) * 2.5,
+      -1.35 - Math.random() * 0.3,
+      (Math.random() - 0.5) * 1.5 + 0.3
+    );
+    petal.rotation.set(Math.random() * 0.6, Math.random() * Math.PI, Math.random() * 0.4);
+    petal.castShadow = true;
+    root.add(petal);
+  }
+
+  root.visible = false;
+  scene.add(root);
+  return root;
+}
+
+// ══════════════════════════════════════════════
+// BODY MAP CARDS — 身体地图卡牌盒
+// ══════════════════════════════════════════════
+function createCardsScene() {
+  const root = new THREE.Group();
+
+  // Main box
+  const boxGeom = new THREE.BoxGeometry(0.55, 0.72, 0.11, 3, 3, 3);
+  const box = new THREE.Mesh(boxGeom, new THREE.MeshStandardMaterial({
+    color: 0xd4c5b8, roughness: 0.55, metalness: 0.03
+  }));
+  box.castShadow = true; box.receiveShadow = true;
+  root.add(box);
+
+  // Spine
+  const spine = new THREE.Mesh(
+    new THREE.BoxGeometry(0.055, 0.68, 0.13),
+    new THREE.MeshStandardMaterial({ color: 0xc4b0a0, roughness: 0.45, metalness: 0.05 })
+  );
+  spine.position.x = -0.275; spine.castShadow = true;
+  root.add(spine);
+
+  // Cover foil lines
+  for (let y = -0.24; y <= 0.24; y += 0.12) {
+    const line = new THREE.Mesh(
+      new THREE.BoxGeometry(0.45, 0.002, 0.005),
+      new THREE.MeshStandardMaterial({ color: 0xd8d0c8, roughness: 0.15, metalness: 0.7 })
+    );
+    line.position.set(0, y, 0.058);
+    root.add(line);
+  }
+
+  // Center ornament (body map symbol)
+  const ornament = new THREE.Mesh(
+    new THREE.TorusGeometry(0.08, 0.007, 16, 32),
+    new THREE.MeshStandardMaterial({ color: 0xd5c8b8, roughness: 0.18, metalness: 0.6 })
+  );
+  ornament.position.z = 0.058;
+  root.add(ornament);
+
+  // Inner detail ring
+  const innerRing = new THREE.Mesh(
+    new THREE.RingGeometry(0.03, 0.05, 32),
+    new THREE.MeshStandardMaterial({
+      color: 0xbfaa98, roughness: 0.25, metalness: 0.5, side: THREE.DoubleSide
+    })
+  );
+  innerRing.position.z = 0.059;
+  root.add(innerRing);
+
+  // Peeking cards
+  const cardColors = [0xf0e8e0, 0xede4da, 0xece0d5, 0xeadcd0];
+  for (let i = 0; i < 4; i++) {
+    const cardGeom = new THREE.BoxGeometry(0.48, 0.62, 0.004);
+    const card = new THREE.Mesh(cardGeom, new THREE.MeshStandardMaterial({
+      color: cardColors[i], roughness: 0.5, metalness: 0.02
+    }));
+    card.position.set(0.01 * i, 0.01 * i, 0.06 + i * 0.006);
+    card.castShadow = true;
+    root.add(card);
+  }
+
+  // Open card display
+  const displayCard = new THREE.Group();
+  const cardBase = new THREE.Mesh(
+    new THREE.BoxGeometry(0.35, 0.45, 0.004),
+    new THREE.MeshStandardMaterial({ color: 0xf5ede5, roughness: 0.4, metalness: 0.02 })
+  );
+  cardBase.castShadow = true;
+  displayCard.add(cardBase);
+
+  // Decorative abstract figure on card
+  const figGeom = new THREE.TorusGeometry(0.06, 0.006, 8, 16);
+  const fig = new THREE.Mesh(figGeom, new THREE.MeshStandardMaterial({
+    color: 0xd4b8a8, roughness: 0.3, metalness: 0.3
+  }));
+  fig.position.z = 0.003;
+  displayCard.add(fig);
+
+  // Small circle motif
+  const circGeom = new THREE.TorusGeometry(0.025, 0.004, 8, 16);
+  const circ = new THREE.Mesh(circGeom, new THREE.MeshStandardMaterial({
+    color: 0xc4a898, roughness: 0.25, metalness: 0.35
+  }));
+  circ.position.set(0.06, -0.03, 0.003);
+  displayCard.add(circ);
+
+  displayCard.position.set(0.45, 0.15, 0.3);
+  displayCard.rotation.set(-0.2, -0.4, 0.15);
+  root.add(displayCard);
+
+  root.position.set(0, 0.2, -0.3);
+  root.visible = false;
+  scene.add(root);
+  return root;
+}
+
+// ══════════════════════════════════════════════
+// APP MOCKUP — SOMAPOSE APP
+// ══════════════════════════════════════════════
+function createAppScene() {
+  const root = new THREE.Group();
+
+  // Phone body
+  const phoneGeom = new THREE.BoxGeometry(0.38, 0.72, 0.03, 6, 10, 2);
+  const phone = new THREE.Mesh(phoneGeom, new THREE.MeshStandardMaterial({
+    color: 0x2c2520, roughness: 0.15, metalness: 0.1
+  }));
+  phone.castShadow = true; phone.receiveShadow = true;
+  root.add(phone);
+
+  // Screen (glowing)
+  const screenGeom = new THREE.PlaneGeometry(0.32, 0.6);
+  const screenMat = new THREE.MeshStandardMaterial({
+    color: 0xfff5ec,
+    roughness: 0.3,
+    metalness: 0.05,
+    emissive: 0xffe8d6,
+    emissiveIntensity: 0.5,
+  });
+  const screen = new THREE.Mesh(screenGeom, screenMat);
+  screen.position.z = 0.016;
+  root.add(screen);
+
+  // Screen content — warm gradient bars
+  const barColors = [0xe8c8b8, 0xdcc0b0, 0xecd5c8, 0xd4b8a8, 0xe0ccc0];
+  for (let i = 0; i < 5; i++) {
+    const barGeom = new THREE.PlaneGeometry(0.24, 0.03);
+    const bar = new THREE.Mesh(barGeom, new THREE.MeshStandardMaterial({
+      color: barColors[i], roughness: 0.4, metalness: 0.05
+    }));
+    bar.position.set(0, 0.15 - i * 0.07, 0.017);
+    root.add(bar);
+  }
+
+  // Heart icon on screen
+  const heartShape = new THREE.Shape();
+  const x = 0, y = 0;
+  heartShape.moveTo(x, y - 0.02);
+  heartShape.bezierCurveTo(x, y - 0.06, x - 0.06, y - 0.06, x - 0.06, y - 0.02);
+  heartShape.bezierCurveTo(x - 0.06, y + 0.04, x, y + 0.08, x, y + 0.12);
+  heartShape.bezierCurveTo(x, y + 0.08, x + 0.06, y + 0.04, x + 0.06, y - 0.02);
+  heartShape.bezierCurveTo(x + 0.06, y - 0.06, x, y - 0.06, x, y - 0.02);
+  const heartGeom = new THREE.ShapeGeometry(heartShape);
+  const heart = new THREE.Mesh(heartGeom, new THREE.MeshStandardMaterial({
+    color: 0xd4a0a0, roughness: 0.3, metalness: 0.1,
+    emissive: 0xd4a0a0, emissiveIntensity: 0.3
+  }));
+  heart.position.set(0, -0.14, 0.0175);
+  root.add(heart);
+
+  // Dots indicating data points
+  for (let i = 0; i < 12; i++) {
+    const dot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.008, 8, 8),
+      new THREE.MeshStandardMaterial({
+        color: i % 3 === 0 ? 0xd4a0a0 : 0xccc0b8,
+        roughness: 0.3, metalness: 0.2,
+        emissive: i % 3 === 0 ? 0xd4a0a0 : 0,
+        emissiveIntensity: 0.4
+      })
+    );
+    dot.position.set(
+      (Math.random() - 0.5) * 0.22,
+      0.22 - Math.random() * 0.4,
+      0.018
+    );
+    root.add(dot);
+  }
+
+  // Curve line on screen
+  const curvePoints = [];
+  for (let i = 0; i < 20; i++) {
+    curvePoints.push(new THREE.Vector3(
+      -0.12 + i * 0.012,
+      0.1 + Math.sin(i * 0.5) * 0.06 + Math.cos(i * 0.3) * 0.04,
+      0.018
+    ));
+  }
+  const curveGeom = new THREE.BufferGeometry().setFromPoints(curvePoints);
+  const curve = new THREE.Line(curveGeom, new THREE.LineBasicMaterial({
+    color: 0xc4a090, linewidth: 1, transparent: true, opacity: 0.7
+  }));
+  root.add(curve);
+
+  // Floating UI elements around the phone
+  const floatElements = [];
+  for (let i = 0; i < 5; i++) {
+    const size = 0.04 + Math.random() * 0.06;
+    const elem = new THREE.Mesh(
+      new THREE.BoxGeometry(size, size, 0.02),
+      new THREE.MeshStandardMaterial({
+        color: [0xe8d5c8, 0xdfc8b8, 0xdcc0b0, 0xe8ddd0, 0xd5c4b4][i],
+        roughness: 0.3, metalness: 0.1,
+        transparent: true, opacity: 0.7,
+      })
+    );
+    elem.userData = {
+      baseX: (Math.random() - 0.5) * 1.2,
+      baseY: 0.1 + Math.random() * 0.5,
+      baseZ: 0.1 + Math.random() * 0.4,
+      speed: 0.4 + Math.random() * 0.8,
+      phase: Math.random() * Math.PI * 2,
+      amplitude: 0.05 + Math.random() * 0.08,
+    };
+    elem.position.set(elem.userData.baseX, elem.userData.baseY, elem.userData.baseZ);
+    floatElements.push(elem);
+    root.add(elem);
+  }
+  root.userData = { floatElements };
+
+  root.position.set(0, 0.25, 0);
+  root.visible = false;
+  scene.add(root);
+  return root;
+}
+
+// ══════════════════════════════════════════════
+// Product Switching
+// ══════════════════════════════════════════════
+function showProduct(name) {
+  currentProduct = name;
+  const info = productInfo[name];
+
+  // Hide all, show selected
+  Object.entries(productGroups).forEach(([key, group]) => {
+    group.visible = (key === name);
+  });
+
+  // Update camera
+  const [px, py, pz] = info.cameraPos;
+  const [tx, ty, tz] = info.cameraTarget;
+  camera.position.set(px, py, pz);
+  controls.target.set(tx, ty, tz);
+  controls.update();
+
+  // Update info overlay
+  document.getElementById('info-title').textContent = info.title;
+  document.getElementById('info-desc').textContent = info.desc;
+  document.getElementById('info-features').innerHTML = info.features
+    .map(f => `<span class="feature-tag">${f}</span>`).join('');
+
+  // Update active card
+  document.querySelectorAll('.product-card').forEach(card => {
+    card.classList.toggle('active', card.dataset.product === name);
+  });
+}
+
+// ─── Event Listeners ──────────────────────
+document.querySelectorAll('.product-card').forEach(card => {
+  card.addEventListener('click', () => showProduct(card.dataset.product));
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  const products = ['rings', 'cards', 'app'];
+  const idx = products.indexOf(currentProduct);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const next = e.key === 'ArrowDown'
+      ? (idx + 1) % products.length
+      : (idx - 1 + products.length) % products.length;
+    showProduct(products[next]);
+  }
+});
+
+// ─── Animation Loop ───────────────────────
+function animate() {
+  requestAnimationFrame(animate);
+
+  const t = clock.getElapsedTime();
+
+  // Animate rings
+  const ringsGroup = productGroups.rings;
+  if (ringsGroup && ringsGroup.visible) {
+    ringsGroup.children.forEach((child, i) => {
+      if (child.isGroup && child.children.length > 5) {
+        child.position.y = 0.25 + Math.sin(t * 0.8 + i) * 0.04;
+        child.rotation.z += (i === 0 ? 0.002 : -0.002);
+      }
+    });
+  }
+
+  // Animate app float elements
+  const appGroup = productGroups.app;
+  if (appGroup && appGroup.userData && appGroup.userData.floatElements) {
+    appGroup.userData.floatElements.forEach(elem => {
+      const ud = elem.userData;
+      elem.position.x = ud.baseX + Math.sin(t * ud.speed + ud.phase) * ud.amplitude;
+      elem.position.y = ud.baseY + Math.cos(t * ud.speed * 0.7 + ud.phase) * ud.amplitude * 0.7;
+      elem.rotation.z += 0.003;
+    });
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// ─── Resize ───────────────────────────────
+window.addEventListener('resize', () => {
+  const container = document.getElementById('canvas-container');
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+});
+
+// ─── Start ────────────────────────────────
+initScene();
+animate();
+
+console.log('✅ 身境 SOMAPOSE 产品交互展厅 就绪');
+console.log('   ← 点击左侧产品卡片切换视图');
+console.log('   ⌨ 方向键上下也可切换');
+console.log('   🖱 鼠标拖拽旋转/缩放模型');
+</script>
+</body>
+</html>
